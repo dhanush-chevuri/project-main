@@ -28,12 +28,12 @@ jobs:
       # Step 4: Build Docker image
       - name: Build Docker image
         run: |
-          docker build -t shunnualisha8980/medusa-store:latest .
+          docker build -t dhanush282/medusa-store:latest .
 
       # Step 5: Push Docker image to Docker Hub
       - name: Push Docker image to Docker Hub
         run: |
-          docker push shunnualisha8980/medusa-store:latest
+          docker push dhanush282/medusa-store:latest
 
       # Step 6: Configure AWS credentials
       - name: Configure AWS credentials
@@ -43,13 +43,13 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-southeast-2
 
-      # Step 7: Pull Docker image (just for confirmation/logging)
+      # Step 7: Pull Docker image (optional logging)
       - name: Pull Docker image from Docker Hub
         run: |
-          docker pull shunnualisha8980/medusa-store:latest
-          echo "Pulled image: shunnualisha8980/medusa-store:latest"
+          docker pull dhanush282/medusa-store:latest
+          echo "Pulled image: dhanush282/medusa-store:latest"
 
-      # Step 8: Update ECS task definition with new image
+      # Step 8: Update ECS task definition
       - name: Update ECS task definition
         id: update-task-def
         run: |
@@ -59,7 +59,7 @@ jobs:
 
           NEW_TASK_DEF=$(echo "$TASK_DEF" | jq \
             '.taskDefinition |
-            .containerDefinitions[0].image = "shunnualisha8980/medusa-store:latest" |
+            .containerDefinitions[0].image = "dhanush282/medusa-store:latest" |
             del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)')
 
           NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
@@ -69,7 +69,7 @@ jobs:
 
           echo "task_definition_arn=$NEW_TASK_DEF_ARN" >> $GITHUB_OUTPUT
 
-      # Step 9: Update ECS service with new task definition
+      # Step 9: Update ECS service
       - name: Update ECS service
         run: |
           aws ecs update-service \
@@ -80,7 +80,7 @@ jobs:
             --region ap-southeast-2
           echo "Updated ECS service with new image"
 
-      # Step 10: Wait until ECS service stabilizes
+      # Step 10: Wait for ECS service to stabilize
       - name: Wait for ECS service to stabilize
         run: |
           aws ecs wait services-stable \
