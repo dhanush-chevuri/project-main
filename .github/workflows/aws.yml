@@ -43,7 +43,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-southeast-2
 
-      # Step 7: Pull Docker image (optional logging)
+      # Step 7: Pull Docker image from Docker Hub (for log confirmation)
       - name: Pull Docker image from Docker Hub
         run: |
           docker pull dhanush282/medusa-store:latest
@@ -62,12 +62,14 @@ jobs:
             .containerDefinitions[0].image = "dhanush282/medusa-store:latest" |
             del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)')
 
+          echo "$NEW_TASK_DEF" > new-task-def.json
+
           NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
             --region ap-southeast-2 \
-            --cli-input-json "$NEW_TASK_DEF" \
+            --cli-input-json file://new-task-def.json \
             | jq -r '.taskDefinition.taskDefinitionArn')
 
-          echo "task_definition_arn=$NEW_TASK_DEF_ARN" >> $GITHUB_OUTPUT
+          echo "task_definition_arn=$NEW_TASK_DEF_ARN" >> $GITHUB_ENV
 
       # Step 9: Update ECS service
       - name: Update ECS service
@@ -75,7 +77,7 @@ jobs:
           aws ecs update-service \
             --cluster medusa-cluster \
             --service medusa-service \
-            --task-definition ${{ steps.update-task-def.outputs.task_definition_arn }} \
+            --task-definition ${{ env.task_definition_arn }} \
             --force-new-deployment \
             --region ap-southeast-2
           echo "Updated ECS service with new image"
