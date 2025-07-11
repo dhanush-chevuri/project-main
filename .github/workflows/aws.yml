@@ -49,7 +49,7 @@ jobs:
           docker pull dhanush282/medusa-store:latest
           echo "Pulled image: dhanush282/medusa-store:latest"
 
-      # Step 8: Update ECS task definition
+            # Step 8: Update ECS task definition
       - name: Update ECS task definition
         id: update-task-def
         run: |
@@ -64,12 +64,21 @@ jobs:
 
           echo "$NEW_TASK_DEF" > new-task-def.json
 
-          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
+          echo "Registering new ECS task definition..."
+          RESPONSE=$(aws ecs register-task-definition \
             --region ap-southeast-2 \
-            --cli-input-json file://new-task-def.json \
-            | jq -r '.taskDefinition.taskDefinitionArn')
+            --cli-input-json file://new-task-def.json)
+
+          NEW_TASK_DEF_ARN=$(echo "$RESPONSE" | jq -r '.taskDefinition.taskDefinitionArn')
+          echo "New task definition ARN: $NEW_TASK_DEF_ARN"
+
+          if [ -z "$NEW_TASK_DEF_ARN" ]; then
+            echo "ERROR: Task definition ARN not created!" >&2
+            exit 1
+          fi
 
           echo "task_definition_arn=$NEW_TASK_DEF_ARN" >> $GITHUB_ENV
+
 
       # Step 9: Update ECS service
       - name: Update ECS service
